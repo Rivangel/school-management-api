@@ -1,0 +1,291 @@
+{
+  "info": {
+    "name": "School Management API",
+    "description": "Colección para probar la API de gestión escolar. Ejecuta primero 'Auth > Login (ADMIN)': el token JWT se guarda automáticamente en la variable {{token}} y se usa en el resto de las peticiones.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080" },
+    { "key": "token", "value": "" }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Login (ADMIN)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    pm.collectionVariables.set('token', pm.response.json().token);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@escuela.com\",\n  \"password\": \"admin123\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Login (MAESTRO)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    pm.collectionVariables.set('token', pm.response.json().token);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"juan.perez@escuela.com\",\n  \"password\": \"maestro123\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Login (ALUMNO)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    pm.collectionVariables.set('token', pm.response.json().token);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"ana.lopez@escuela.com\",\n  \"password\": \"alumno123\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Register",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/auth/register",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Nuevo Usuario\",\n  \"email\": \"nuevo@escuela.com\",\n  \"password\": \"secreto123\",\n  \"rol\": \"ALUMNO\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Alumnos",
+      "item": [
+        {
+          "name": "Listar alumnos",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/alumnos" }
+        },
+        {
+          "name": "Obtener alumno por id",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/alumnos/1" }
+        },
+        {
+          "name": "Crear alumno",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/alumnos",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Pedro\",\n  \"apellido\": \"Sánchez\",\n  \"matricula\": \"A2026004\",\n  \"email\": \"pedro.sanchez@escuela.com\",\n  \"grupo\": \"B\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Actualizar alumno",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/alumnos/1",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Ana\",\n  \"apellido\": \"López\",\n  \"matricula\": \"A2026001\",\n  \"email\": \"ana.lopez@escuela.com\",\n  \"grupo\": \"C\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Eliminar alumno",
+          "request": { "method": "DELETE", "url": "{{baseUrl}}/api/alumnos/3" }
+        }
+      ]
+    },
+    {
+      "name": "Maestros",
+      "item": [
+        {
+          "name": "Listar maestros",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/maestros" }
+        },
+        {
+          "name": "Obtener maestro por id",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/maestros/1" }
+        },
+        {
+          "name": "Crear maestro",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/maestros",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Sofía\",\n  \"apellido\": \"Martínez\",\n  \"email\": \"sofia.martinez@escuela.com\",\n  \"especialidad\": \"Física\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Actualizar maestro",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/maestros/1",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Juan\",\n  \"apellido\": \"Pérez\",\n  \"email\": \"juan.perez@escuela.com\",\n  \"especialidad\": \"Matemáticas Aplicadas\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Eliminar maestro",
+          "request": { "method": "DELETE", "url": "{{baseUrl}}/api/maestros/2" }
+        }
+      ]
+    },
+    {
+      "name": "Materias",
+      "item": [
+        {
+          "name": "Listar materias",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/materias" }
+        },
+        {
+          "name": "Obtener materia por id",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/materias/1" }
+        },
+        {
+          "name": "Crear materia",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/materias",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Estructuras de Datos\",\n  \"creditos\": 8,\n  \"maestroId\": 2\n}"
+            }
+          }
+        },
+        {
+          "name": "Actualizar materia",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/materias/1",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Matemáticas I\",\n  \"creditos\": 10,\n  \"maestroId\": 1\n}"
+            }
+          }
+        },
+        {
+          "name": "Eliminar materia",
+          "request": { "method": "DELETE", "url": "{{baseUrl}}/api/materias/3" }
+        }
+      ]
+    },
+    {
+      "name": "Calificaciones",
+      "item": [
+        {
+          "name": "Registrar calificación",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/calificaciones",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"alumnoId\": 2,\n  \"materiaId\": 3,\n  \"calificacion\": 8.5,\n  \"periodo\": \"2026-1\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Calificaciones por alumno",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/calificaciones/alumno/1" }
+        },
+        {
+          "name": "Calificaciones por materia",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/calificaciones/materia/2" }
+        }
+      ]
+    },
+    {
+      "name": "Asistencia",
+      "item": [
+        {
+          "name": "Registrar asistencia",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/asistencia",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"alumnoId\": 1,\n  \"materiaId\": 1,\n  \"fecha\": \"2026-07-22\",\n  \"presente\": true\n}"
+            }
+          }
+        },
+        {
+          "name": "Asistencia por alumno",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/asistencia/alumno/1" }
+        }
+      ]
+    },
+    {
+      "name": "Reportes",
+      "item": [
+        {
+          "name": "Descargar boleta PDF",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/reportes/boleta/1" }
+        }
+      ]
+    }
+  ]
+}
