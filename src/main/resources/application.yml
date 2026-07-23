@@ -1,0 +1,43 @@
+spring:
+  application:
+    name: school-management-api
+
+  datasource:
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:escuela_db}?createDatabaseIfNotExist=true&serverTimezone=UTC
+    username: ${DB_USERNAME:escuela_user}
+    password: ${DB_PASSWORD:escuela_pass}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+    # Ejecuta data.sql después de que Hibernate cree el esquema
+    defer-datasource-initialization: true
+
+  sql:
+    init:
+      mode: always
+      # Los INSERT usan INSERT IGNORE, por lo que reiniciar la app no duplica datos
+      continue-on-error: false
+
+app:
+  jwt:
+    secret: ${JWT_SECRET:cambia-este-secreto-por-uno-de-al-menos-32-caracteres}
+    expiration-ms: ${JWT_EXPIRATION:86400000}
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    tags-sorter: alpha
+    operations-sorter: method
+
+server:
+  port: ${SERVER_PORT:8080}
+
+logging:
+  level:
+    org.springframework.security: INFO
