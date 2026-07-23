@@ -1,0 +1,47 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: escuela-mysql
+    environment:
+      MYSQL_DATABASE: ${DB_NAME:-escuela_db}
+      MYSQL_USER: ${DB_USERNAME:-escuela_user}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-escuela_pass}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-root_pass}
+    ports:
+      - "${DB_PORT:-3306}:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p$$MYSQL_ROOT_PASSWORD"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    networks:
+      - escuela-net
+
+  api:
+    build: .
+    container_name: escuela-api
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_NAME: ${DB_NAME:-escuela_db}
+      DB_USERNAME: ${DB_USERNAME:-escuela_user}
+      DB_PASSWORD: ${DB_PASSWORD:-escuela_pass}
+      JWT_SECRET: ${JWT_SECRET:-cambia-este-secreto-por-uno-de-al-menos-32-caracteres}
+      JWT_EXPIRATION: ${JWT_EXPIRATION:-86400000}
+    ports:
+      - "${SERVER_PORT:-8080}:8080"
+    restart: unless-stopped
+    networks:
+      - escuela-net
+
+volumes:
+  mysql_data:
+
+networks:
+  escuela-net:
+    driver: bridge
