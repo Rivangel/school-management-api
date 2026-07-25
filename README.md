@@ -106,6 +106,23 @@ mvn spring-boot:run
 
 La configuración se toma de variables de entorno (ver `.env.example`); si no existen se usan valores por defecto (`localhost:3306`, BD `escuela_db`, usuario `escuela_user`).
 
+## Tests
+
+Los tests no necesitan MySQL: los unitarios usan Mockito y los de integración levantan H2 en memoria con el perfil `test` (`src/test/resources/application-test.yml`, modo MySQL para que `data.sql` funcione igual que en producción).
+
+```bash
+mvn test
+```
+
+Si no tienes Maven o JDK 17 instalados, puedes correrlos en un contenedor:
+
+```bash
+docker run --rm -u $(id -u):$(id -g) \
+  -e MAVEN_CONFIG=/var/maven/.m2 \
+  -v "$HOME/.m2":/var/maven/.m2 -v "$PWD":/app -w /app \
+  maven:3.9-eclipse-temurin-17 mvn -B -Duser.home=/var/maven test
+```
+
 ## Usuarios de prueba
 
 | Email | Contraseña | Rol |
