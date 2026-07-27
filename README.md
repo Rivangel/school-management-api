@@ -118,6 +118,9 @@ Cobertura actual:
 | `AlumnoServiceTest` | CRUD, unicidad de matrícula/email, `ResourceNotFoundException` |
 | `MaestroServiceTest` | CRUD, unicidad de email (incluida capitalización al actualizar) |
 | `MateriaServiceTest` | CRUD y vinculación con el maestro (`maestroId` inexistente → 404) |
+| `CalificacionServiceTest` | Upsert por alumno/materia/periodo, consultas por alumno y por materia, reglas de propiedad |
+| `AsistenciaServiceTest` | Upsert por alumno/materia/fecha, consulta por alumno, reglas de propiedad |
+| `CurrentUserServiceTest` | Reglas de propiedad reales: ALUMNO solo ve lo suyo, MAESTRO solo registra en sus materias, ADMIN sin restricción |
 
 ```bash
 mvn test
