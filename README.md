@@ -110,6 +110,15 @@ La configuración se toma de variables de entorno (ver `.env.example`); si no ex
 
 Los tests no necesitan MySQL: los unitarios usan Mockito y los de integración levantan H2 en memoria con el perfil `test` (`src/test/resources/application-test.yml`, modo MySQL para que `data.sql` funcione igual que en producción).
 
+Cobertura actual:
+
+| Suite | Qué cubre |
+|---|---|
+| `SchoolManagementApplicationTests` | Arranque del contexto de Spring |
+| `AlumnoServiceTest` | CRUD, unicidad de matrícula/email, `ResourceNotFoundException` |
+| `MaestroServiceTest` | CRUD, unicidad de email (incluida capitalización al actualizar) |
+| `MateriaServiceTest` | CRUD y vinculación con el maestro (`maestroId` inexistente → 404) |
+
 ```bash
 mvn test
 ```
