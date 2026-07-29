@@ -122,12 +122,20 @@ Cobertura actual:
 | `AsistenciaServiceTest` | Upsert por alumno/materia/fecha, consulta por alumno, reglas de propiedad |
 | `CurrentUserServiceTest` | Reglas de propiedad reales: ALUMNO solo ve lo suyo, MAESTRO solo registra en sus materias, ADMIN sin restricción |
 | `AuthControllerIntegrationTest` | Integración de `/api/auth`: login (200 con token, 401 en credenciales malas, 400 de validación), registro (201, contraseña cifrada, email duplicado) y uso del JWT emitido en endpoints protegidos |
+| `AlumnoControllerIntegrationTest` | Integración de `/api/alumnos`: CRUD completo del ADMIN contra la BD y matriz de acceso por rol (con `@WithMockUser` y con tokens JWT reales) |
+
+Matriz de acceso que fijan los tests de `/api/alumnos`:
+
+| | Sin token | ALUMNO | MAESTRO | ADMIN |
+|---|---|---|---|---|
+| `GET` (listar / ficha) | 401 | 403 | ✅ | ✅ |
+| `POST` · `PUT` · `DELETE` | 401 | 403 | 403 | ✅ |
 
 ```bash
 mvn test
 ```
 
-Al momento la suite son **96 tests**.
+Al momento la suite son **126 tests**.
 
 Si no tienes Maven o JDK 17 instalados, puedes correrlos en un contenedor:
 
