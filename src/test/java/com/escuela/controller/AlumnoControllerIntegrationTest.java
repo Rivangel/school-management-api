@@ -1,6 +1,8 @@
 package com.escuela.controller;
 
 import com.escuela.model.dto.AlumnoRequest;
+import com.escuela.model.dto.AuthResponse;
+import com.escuela.model.dto.LoginRequest;
 import com.escuela.model.entity.Alumno;
 import com.escuela.repository.AlumnoRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -36,7 +38,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * declarada en {@code SecurityConfig}: la consulta la comparten ADMIN y MAESTRO,
  * mientras que crear, actualizar y borrar son exclusivos de ADMIN.
  *
- * <p>El rol se simula con {@code @WithMockUser} para cubrir la matriz completa.
+ * <p>El rol se simula con {@code @WithMockUser} para cubrir la matriz completa, y
+ * además hay un grupo que repite los casos clave con tokens JWT reales pedidos a
+ * {@code /api/auth/login}, para comprobar que la cadena entera (filtro JWT incluido)
+ * llega a la misma decisión.
  *
  * <p>Nota: los rechazos por rol los emite la cadena de filtros de seguridad, antes
  * del {@code DispatcherServlet}, así que no pasan por {@code GlobalExceptionHandler}
@@ -52,6 +57,7 @@ class AlumnoControllerIntegrationTest {
 
     private static final String ALUMNOS_URL = "/api/alumnos";
     private static final String ALUMNO_URL = "/api/alumnos/1";
+    private static final String LOGIN_URL = "/api/auth/login";
 
     private static final String NUEVO_EMAIL = "sofia.vargas@alumnos.escuela.com";
     private static final String NUEVA_MATRICULA = "A2026099";
@@ -82,6 +88,17 @@ class AlumnoControllerIntegrationTest {
                     .content(objectMapper.writeValueAsString(nuevoAlumno()));
         }
         return builder;
+    }
+
+    private String tokenDe(String email, String password) throws Exception {
+        String json = mockMvc.perform(post(LOGIN_URL)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new LoginRequest(email, password))))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        return objectMapper.readValue(json, AuthResponse.class).token();
     }
 
     @Nested
@@ -321,6 +338,59 @@ class AlumnoControllerIntegrationTest {
 
             assertThat(alumnoRepository.findById(1L)).isPresent();
             assertThat(alumnoRepository.findByEmail(NUEVO_EMAIL)).isEmpty();
+        }
+    }
+
+    @Nested
+    @DisplayName("con tokens JWT reales")
+    class ConJwtReal {
+
+        @Test
+        @DisplayName("el ADMIN lista y crea alumnos con su token")
+        void adminOperaConSuToken() throws Exception {
+            String token = tokenDe("admin@escuela.com", "admin123");
+
+            mockMvc.perform(get(ALUMNOS_URL).header("Authorization", "Bearer " + token))
+                    .andExpect(status().isOk());
+            mockMvc.perform(peticion("POST", ALUMNOS_URL)
+                            .header("Authorization", "Bearer " + token))
+                    .andExpect(status().isCreated());
+
+            assertThat(alumnoRepository.findByEmail(NUEVO_EMAIL)).isPresent();
+        }
+
+        @Test
+        @DisplayName("el MAESTRO consulta con su token pero no puede crear")
+        void maestroSoloConsulta() throws Exception {
+            String token = tokenDe("juan.perez@escuela.com", "maestro123");
+
+            mockMvc.perform(get(ALUMNOS_URL).header("Authorization", "Bearer " + token))
+                    .andExpect(status().isOk());
+            mockMvc.perform(peticion("POST", ALUMNOS_URL)
+                            .header("Authorization", "Bearer " + token))
+                    .andExpect(status().isForbidden());
+
+            assertThat(alumnoRepository.findByEmail(NUEVO_EMAIL)).isEmpty();
+        }
+
+        @Test
+        @DisplayName("el ALUMNO no accede al módulo de alumnos con su token")
+        void alumnoNoAccede() throws Exception {
+            String token = tokenDe("ana.lopez@escuela.com", "alumno123");
+
+            mockMvc.perform(get(ALUMNOS_URL).header("Authorization", "Bearer " + token))
+                    .andExpect(status().isForbidden());
+        }
+
+        @Test
+        @DisplayName("un token manipulado no autoriza nada (401, no 403)")
+        void tokenManipulado() throws Exception {
+            String token = tokenDe("admin@escuela.com", "admin123");
+
+            mockMvc.perform(get(ALUMNOS_URL)
+                            .header("Authorization", "Bearer " + token + "manipulado"))
+                    .andExpect(status().isUnauthorized())
+                    .andExpect(jsonPath("$.message").value("Se requiere un token JWT válido"));
         }
     }
 }
