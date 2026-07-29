@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -240,4 +241,86 @@ class AlumnoControllerIntegrationTest {
         }
     }
 
+    @Nested
+    @WithMockUser(roles = "MAESTRO")
+    @DisplayName("como MAESTRO")
+    class ComoMaestro {
+
+        @Test
+        @DisplayName("puede consultar el listado")
+        void puedeListar() throws Exception {
+            mockMvc.perform(get(ALUMNOS_URL))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$").isArray());
+        }
+
+        @Test
+        @DisplayName("puede consultar un alumno por id")
+        void puedeConsultarPorId() throws Exception {
+            mockMvc.perform(get(ALUMNO_URL))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.matricula").value("A2026001"));
+        }
+
+        @Test
+        @DisplayName("no puede crear alumnos: 403 y nada se persiste")
+        void noPuedeCrear() throws Exception {
+            mockMvc.perform(peticion("POST", ALUMNOS_URL))
+                    .andExpect(status().isForbidden());
+
+            assertThat(alumnoRepository.findByEmail(NUEVO_EMAIL)).isEmpty();
+        }
+
+        @Test
+        @DisplayName("no puede actualizar alumnos: 403 y el registro no cambia")
+        void noPuedeActualizar() throws Exception {
+            mockMvc.perform(peticion("PUT", ALUMNO_URL))
+                    .andExpect(status().isForbidden());
+
+            assertThat(alumnoRepository.findById(1L)).get()
+                    .extracting(Alumno::getMatricula).isEqualTo("A2026001");
+        }
+
+        @Test
+        @DisplayName("no puede eliminar alumnos: 403 y el registro sigue ahí")
+        void noPuedeEliminar() throws Exception {
+            mockMvc.perform(MockMvcRequestBuilders.delete(ALUMNO_URL))
+                    .andExpect(status().isForbidden());
+
+            assertThat(alumnoRepository.findById(1L)).isPresent();
+        }
+    }
+
+    @Nested
+    @WithMockUser(roles = "ALUMNO")
+    @DisplayName("como ALUMNO")
+    class ComoAlumno {
+
+        @Test
+        @DisplayName("no puede consultar el listado de alumnos")
+        void noPuedeListar() throws Exception {
+            mockMvc.perform(get(ALUMNOS_URL))
+                    .andExpect(status().isForbidden());
+        }
+
+        @Test
+        @DisplayName("no puede consultar la ficha de otro alumno")
+        void noPuedeConsultarPorId() throws Exception {
+            mockMvc.perform(get(ALUMNO_URL))
+                    .andExpect(status().isForbidden());
+        }
+
+        @ParameterizedTest(name = "{0} devuelve 403")
+        @ValueSource(strings = {"POST", "PUT", "DELETE"})
+        @DisplayName("tampoco puede modificar nada")
+        void noPuedeModificar(String metodo) throws Exception {
+            String path = "POST".equals(metodo) ? ALUMNOS_URL : ALUMNO_URL;
+
+            mockMvc.perform(peticion(metodo, path))
+                    .andExpect(status().isForbidden());
+
+            assertThat(alumnoRepository.findById(1L)).isPresent();
+            assertThat(alumnoRepository.findByEmail(NUEVO_EMAIL)).isEmpty();
+        }
+    }
 }
