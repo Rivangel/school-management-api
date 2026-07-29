@@ -121,10 +121,13 @@ Cobertura actual:
 | `CalificacionServiceTest` | Upsert por alumno/materia/periodo, consultas por alumno y por materia, reglas de propiedad |
 | `AsistenciaServiceTest` | Upsert por alumno/materia/fecha, consulta por alumno, reglas de propiedad |
 | `CurrentUserServiceTest` | Reglas de propiedad reales: ALUMNO solo ve lo suyo, MAESTRO solo registra en sus materias, ADMIN sin restricción |
+| `AuthControllerIntegrationTest` | Integración de `/api/auth`: login (200 con token, 401 en credenciales malas, 400 de validación), registro (201, contraseña cifrada, email duplicado) y uso del JWT emitido en endpoints protegidos |
 
 ```bash
 mvn test
 ```
+
+Al momento la suite son **96 tests**.
 
 Si no tienes Maven o JDK 17 instalados, puedes correrlos en un contenedor:
 
