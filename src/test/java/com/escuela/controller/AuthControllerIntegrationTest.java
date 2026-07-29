@@ -26,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -290,6 +291,48 @@ class AuthControllerIntegrationTest {
                             .value("El cuerpo de la petición es inválido o está mal formado"));
 
             assertThat(usuarioRepository.findByEmail("sofia.vargas@escuela.com")).isEmpty();
+        }
+    }
+
+    @Nested
+    @DisplayName("el JWT emitido")
+    class TokenEnEndpointsProtegidos {
+
+        @Test
+        @DisplayName("autentica al usuario en un endpoint protegido")
+        void tokenAutenticaPeticiones() throws Exception {
+            String token = login(ADMIN_EMAIL, ADMIN_PASSWORD).token();
+
+            mockMvc.perform(get("/api/alumnos").header("Authorization", "Bearer " + token))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$").isArray());
+        }
+
+        @Test
+        @DisplayName("es obligatorio: sin cabecera Authorization la petición es 401")
+        void sinTokenDevuelve401() throws Exception {
+            mockMvc.perform(get("/api/alumnos"))
+                    .andExpect(status().isUnauthorized())
+                    .andExpect(jsonPath("$.message").value("Se requiere un token JWT válido"));
+        }
+
+        @Test
+        @DisplayName("un token manipulado se rechaza con 401")
+        void tokenManipuladoDevuelve401() throws Exception {
+            String token = login(ADMIN_EMAIL, ADMIN_PASSWORD).token();
+
+            mockMvc.perform(get("/api/alumnos")
+                            .header("Authorization", "Bearer " + token + "manipulado"))
+                    .andExpect(status().isUnauthorized())
+                    .andExpect(jsonPath("$.message").value("Se requiere un token JWT válido"));
+        }
+
+        @Test
+        @DisplayName("los endpoints de autenticación siguen siendo públicos")
+        void authEsPublico() throws Exception {
+            postJson(LOGIN_URL, new LoginRequest(ADMIN_EMAIL, ADMIN_PASSWORD))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.message").doesNotExist());
         }
     }
 }
