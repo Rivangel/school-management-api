@@ -24,6 +24,13 @@ spring:
       # Los INSERT usan INSERT IGNORE, por lo que reiniciar la app no duplica datos
       continue-on-error: false
 
+  data:
+    web:
+      pageable:
+        # Un ?size mayor se recorta a este tope en vez de traer la tabla entera
+        max-page-size: 100
+        default-page-size: 20
+
 app:
   jwt:
     secret: ${JWT_SECRET:cambia-este-secreto-por-uno-de-al-menos-32-caracteres}

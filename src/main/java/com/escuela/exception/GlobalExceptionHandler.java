@@ -2,6 +2,7 @@ package com.escuela.exception;
 
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.mapping.PropertyReferenceException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -71,6 +72,18 @@ public class GlobalExceptionHandler {
                                                           HttpServletRequest request) {
         return buildResponse(HttpStatus.BAD_REQUEST,
                 "El cuerpo de la petición es inválido o está mal formado", request);
+    }
+
+    /**
+     * Un {@code sort} que apunta a una propiedad inexistente es un error del cliente,
+     * no del servidor: sin este handler la excepción cae en el genérico y sale un 500.
+     */
+    @ExceptionHandler(PropertyReferenceException.class)
+    public ResponseEntity<ErrorResponse> handlePropiedadDeOrdenInvalida(PropertyReferenceException ex,
+                                                                        HttpServletRequest request) {
+        return buildResponse(HttpStatus.BAD_REQUEST,
+                "No se puede ordenar por '" + ex.getPropertyName() + "': la propiedad no existe",
+                request);
     }
 
     @ExceptionHandler(DataIntegrityViolationException.class)
