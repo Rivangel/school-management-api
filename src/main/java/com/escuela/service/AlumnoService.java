@@ -4,12 +4,12 @@ import com.escuela.exception.BadRequestException;
 import com.escuela.exception.ResourceNotFoundException;
 import com.escuela.model.dto.AlumnoRequest;
 import com.escuela.model.dto.AlumnoResponse;
+import com.escuela.model.dto.PaginaResponse;
 import com.escuela.model.entity.Alumno;
 import com.escuela.repository.AlumnoRepository;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
 
 @Service
 public class AlumnoService {
@@ -21,10 +21,9 @@ public class AlumnoService {
     }
 
     @Transactional(readOnly = true)
-    public List<AlumnoResponse> listar() {
-        return alumnoRepository.findAll().stream()
-                .map(AlumnoResponse::fromEntity)
-                .toList();
+    public PaginaResponse<AlumnoResponse> listar(Pageable pageable) {
+        return PaginaResponse.fromPage(
+                alumnoRepository.findAll(pageable).map(AlumnoResponse::fromEntity));
     }
 
     @Transactional(readOnly = true)

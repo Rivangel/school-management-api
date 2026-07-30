@@ -4,12 +4,12 @@ import com.escuela.exception.BadRequestException;
 import com.escuela.exception.ResourceNotFoundException;
 import com.escuela.model.dto.MaestroRequest;
 import com.escuela.model.dto.MaestroResponse;
+import com.escuela.model.dto.PaginaResponse;
 import com.escuela.model.entity.Maestro;
 import com.escuela.repository.MaestroRepository;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
 
 @Service
 public class MaestroService {
@@ -21,10 +21,9 @@ public class MaestroService {
     }
 
     @Transactional(readOnly = true)
-    public List<MaestroResponse> listar() {
-        return maestroRepository.findAll().stream()
-                .map(MaestroResponse::fromEntity)
-                .toList();
+    public PaginaResponse<MaestroResponse> listar(Pageable pageable) {
+        return PaginaResponse.fromPage(
+                maestroRepository.findAll(pageable).map(MaestroResponse::fromEntity));
     }
 
     @Transactional(readOnly = true)

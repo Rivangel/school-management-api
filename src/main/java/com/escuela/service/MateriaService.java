@@ -3,14 +3,14 @@ package com.escuela.service;
 import com.escuela.exception.ResourceNotFoundException;
 import com.escuela.model.dto.MateriaRequest;
 import com.escuela.model.dto.MateriaResponse;
+import com.escuela.model.dto.PaginaResponse;
 import com.escuela.model.entity.Maestro;
 import com.escuela.model.entity.Materia;
 import com.escuela.repository.MaestroRepository;
 import com.escuela.repository.MateriaRepository;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
 
 @Service
 public class MateriaService {
@@ -25,10 +25,9 @@ public class MateriaService {
     }
 
     @Transactional(readOnly = true)
-    public List<MateriaResponse> listar() {
-        return materiaRepository.findAll().stream()
-                .map(MateriaResponse::fromEntity)
-                .toList();
+    public PaginaResponse<MateriaResponse> listar(Pageable pageable) {
+        return PaginaResponse.fromPage(
+                materiaRepository.findAll(pageable).map(MateriaResponse::fromEntity));
     }
 
     @Transactional(readOnly = true)

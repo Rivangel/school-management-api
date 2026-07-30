@@ -4,6 +4,7 @@ import com.escuela.exception.BadRequestException;
 import com.escuela.exception.ResourceNotFoundException;
 import com.escuela.model.dto.AlumnoRequest;
 import com.escuela.model.dto.AlumnoResponse;
+import com.escuela.model.dto.PaginaResponse;
 import com.escuela.model.entity.Alumno;
 import com.escuela.repository.AlumnoRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -15,6 +16,10 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 
 import java.util.List;
 import java.util.Optional;
@@ -50,27 +55,65 @@ class AlumnoServiceTest {
     @DisplayName("listar")
     class Listar {
 
+        private final Pageable primeraPagina = PageRequest.of(0, 2, Sort.by("apellido"));
+
         @Test
-        @DisplayName("devuelve todos los alumnos mapeados a AlumnoResponse")
-        void devuelveTodosLosAlumnos() {
+        @DisplayName("devuelve los alumnos de la página mapeados a AlumnoResponse")
+        void devuelveLosAlumnosDeLaPagina() {
             Alumno otro = new Alumno("Carlos", "Ramírez", "A2026002", "carlos.ramirez@escuela.com", "B");
             otro.setId(2L);
-            when(alumnoRepository.findAll()).thenReturn(List.of(alumno, otro));
+            when(alumnoRepository.findAll(primeraPagina))
+                    .thenReturn(new PageImpl<>(List.of(alumno, otro), primeraPagina, 2));
 
-            List<AlumnoResponse> resultado = alumnoService.listar();
+            PaginaResponse<AlumnoResponse> resultado = alumnoService.listar(primeraPagina);
 
-            assertThat(resultado).hasSize(2);
-            assertThat(resultado).extracting(AlumnoResponse::matricula)
+            assertThat(resultado.content()).hasSize(2);
+            assertThat(resultado.content()).extracting(AlumnoResponse::matricula)
                     .containsExactly("A2026001", "A2026002");
-            assertThat(resultado.get(0).nombre()).isEqualTo("Ana");
+            assertThat(resultado.content().get(0).nombre()).isEqualTo("Ana");
         }
 
         @Test
-        @DisplayName("devuelve una lista vacía cuando no hay alumnos")
-        void devuelveListaVacia() {
-            when(alumnoRepository.findAll()).thenReturn(List.of());
+        @DisplayName("traslada el Pageable recibido al repositorio sin modificarlo")
+        void trasladaElPageableAlRepositorio() {
+            when(alumnoRepository.findAll(any(Pageable.class)))
+                    .thenReturn(new PageImpl<>(List.of(alumno), primeraPagina, 1));
 
-            assertThat(alumnoService.listar()).isEmpty();
+            alumnoService.listar(primeraPagina);
+
+            ArgumentCaptor<Pageable> captor = ArgumentCaptor.forClass(Pageable.class);
+            verify(alumnoRepository).findAll(captor.capture());
+            assertThat(captor.getValue()).isSameAs(primeraPagina);
+        }
+
+        @Test
+        @DisplayName("expone los metadatos de paginación de la página consultada")
+        void exponeLosMetadatosDePaginacion() {
+            Pageable segundaPagina = PageRequest.of(1, 2);
+            when(alumnoRepository.findAll(segundaPagina))
+                    .thenReturn(new PageImpl<>(List.of(alumno), segundaPagina, 3));
+
+            PaginaResponse<AlumnoResponse> resultado = alumnoService.listar(segundaPagina);
+
+            assertThat(resultado.page()).isEqualTo(1);
+            assertThat(resultado.size()).isEqualTo(2);
+            assertThat(resultado.totalElements()).isEqualTo(3);
+            assertThat(resultado.totalPages()).isEqualTo(2);
+            assertThat(resultado.first()).isFalse();
+            assertThat(resultado.last()).isTrue();
+        }
+
+        @Test
+        @DisplayName("devuelve una página vacía cuando no hay alumnos")
+        void devuelvePaginaVacia() {
+            when(alumnoRepository.findAll(primeraPagina))
+                    .thenReturn(new PageImpl<>(List.of(), primeraPagina, 0));
+
+            PaginaResponse<AlumnoResponse> resultado = alumnoService.listar(primeraPagina);
+
+            assertThat(resultado.content()).isEmpty();
+            assertThat(resultado.totalElements()).isZero();
+            assertThat(resultado.totalPages()).isZero();
         }
     }
 

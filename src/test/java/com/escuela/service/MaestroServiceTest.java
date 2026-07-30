@@ -4,6 +4,7 @@ import com.escuela.exception.BadRequestException;
 import com.escuela.exception.ResourceNotFoundException;
 import com.escuela.model.dto.MaestroRequest;
 import com.escuela.model.dto.MaestroResponse;
+import com.escuela.model.dto.PaginaResponse;
 import com.escuela.model.entity.Maestro;
 import com.escuela.repository.MaestroRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -15,6 +16,10 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 
 import java.util.List;
 import java.util.Optional;
@@ -50,27 +55,60 @@ class MaestroServiceTest {
     @DisplayName("listar")
     class Listar {
 
+        private final Pageable primeraPagina = PageRequest.of(0, 2, Sort.by("apellido"));
+
         @Test
-        @DisplayName("devuelve todos los maestros mapeados a MaestroResponse")
-        void devuelveTodosLosMaestros() {
+        @DisplayName("devuelve los maestros de la página mapeados a MaestroResponse")
+        void devuelveLosMaestrosDeLaPagina() {
             Maestro otro = new Maestro("Jorge", "Salas", "jorge.salas@escuela.com", "Física");
             otro.setId(2L);
-            when(maestroRepository.findAll()).thenReturn(List.of(maestro, otro));
+            when(maestroRepository.findAll(primeraPagina))
+                    .thenReturn(new PageImpl<>(List.of(maestro, otro), primeraPagina, 2));
 
-            List<MaestroResponse> resultado = maestroService.listar();
+            PaginaResponse<MaestroResponse> resultado = maestroService.listar(primeraPagina);
 
-            assertThat(resultado).hasSize(2);
-            assertThat(resultado).extracting(MaestroResponse::email)
+            assertThat(resultado.content()).hasSize(2);
+            assertThat(resultado.content()).extracting(MaestroResponse::email)
                     .containsExactly("laura.mendoza@escuela.com", "jorge.salas@escuela.com");
-            assertThat(resultado.get(1).especialidad()).isEqualTo("Física");
+            assertThat(resultado.content().get(1).especialidad()).isEqualTo("Física");
         }
 
         @Test
-        @DisplayName("devuelve una lista vacía cuando no hay maestros")
-        void devuelveListaVacia() {
-            when(maestroRepository.findAll()).thenReturn(List.of());
+        @DisplayName("traslada el Pageable recibido al repositorio sin modificarlo")
+        void trasladaElPageableAlRepositorio() {
+            when(maestroRepository.findAll(any(Pageable.class)))
+                    .thenReturn(new PageImpl<>(List.of(maestro), primeraPagina, 1));
 
-            assertThat(maestroService.listar()).isEmpty();
+            maestroService.listar(primeraPagina);
+
+            ArgumentCaptor<Pageable> captor = ArgumentCaptor.forClass(Pageable.class);
+            verify(maestroRepository).findAll(captor.capture());
+            assertThat(captor.getValue()).isSameAs(primeraPagina);
+        }
+
+        @Test
+        @DisplayName("expone los metadatos de paginación de la página consultada")
+        void exponeLosMetadatosDePaginacion() {
+            when(maestroRepository.findAll(primeraPagina))
+                    .thenReturn(new PageImpl<>(List.of(maestro, maestro), primeraPagina, 5));
+
+            PaginaResponse<MaestroResponse> resultado = maestroService.listar(primeraPagina);
+
+            assertThat(resultado.page()).isZero();
+            assertThat(resultado.size()).isEqualTo(2);
+            assertThat(resultado.totalElements()).isEqualTo(5);
+            assertThat(resultado.totalPages()).isEqualTo(3);
+            assertThat(resultado.first()).isTrue();
+            assertThat(resultado.last()).isFalse();
+        }
+
+        @Test
+        @DisplayName("devuelve una página vacía cuando no hay maestros")
+        void devuelvePaginaVacia() {
+            when(maestroRepository.findAll(primeraPagina))
+                    .thenReturn(new PageImpl<>(List.of(), primeraPagina, 0));
+
+            assertThat(maestroService.listar(primeraPagina).content()).isEmpty();
         }
     }
 

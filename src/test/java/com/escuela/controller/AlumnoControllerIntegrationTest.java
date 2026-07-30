@@ -142,8 +142,9 @@ class AlumnoControllerIntegrationTest {
 
             mockMvc.perform(get(ALUMNOS_URL))
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.length()").value((int) total))
-                    .andExpect(jsonPath("$[*].matricula")
+                    .andExpect(jsonPath("$.content.length()").value((int) total))
+                    .andExpect(jsonPath("$.totalElements").value((int) total))
+                    .andExpect(jsonPath("$.content[*].matricula")
                             .value(hasItems("A2026001", "A2026002", "A2026003")));
         }
 
@@ -268,7 +269,7 @@ class AlumnoControllerIntegrationTest {
         void puedeListar() throws Exception {
             mockMvc.perform(get(ALUMNOS_URL))
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$").isArray());
+                    .andExpect(jsonPath("$.content").isArray());
         }
 
         @Test

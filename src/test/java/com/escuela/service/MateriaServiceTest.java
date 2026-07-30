@@ -3,6 +3,7 @@ package com.escuela.service;
 import com.escuela.exception.ResourceNotFoundException;
 import com.escuela.model.dto.MateriaRequest;
 import com.escuela.model.dto.MateriaResponse;
+import com.escuela.model.dto.PaginaResponse;
 import com.escuela.model.entity.Maestro;
 import com.escuela.model.entity.Materia;
 import com.escuela.repository.MaestroRepository;
@@ -16,6 +17,10 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 
 import java.util.List;
 import java.util.Optional;
@@ -57,27 +62,60 @@ class MateriaServiceTest {
     @DisplayName("listar")
     class Listar {
 
+        private final Pageable primeraPagina = PageRequest.of(0, 2, Sort.by("nombre"));
+
         @Test
-        @DisplayName("devuelve todas las materias mapeadas a MateriaResponse")
-        void devuelveTodasLasMaterias() {
+        @DisplayName("devuelve las materias de la página mapeadas a MateriaResponse")
+        void devuelveLasMateriasDeLaPagina() {
             Materia otra = new Materia("Cálculo", 10, maestro);
             otra.setId(11L);
-            when(materiaRepository.findAll()).thenReturn(List.of(materia, otra));
+            when(materiaRepository.findAll(primeraPagina))
+                    .thenReturn(new PageImpl<>(List.of(materia, otra), primeraPagina, 2));
 
-            List<MateriaResponse> resultado = materiaService.listar();
+            PaginaResponse<MateriaResponse> resultado = materiaService.listar(primeraPagina);
 
-            assertThat(resultado).hasSize(2);
-            assertThat(resultado).extracting(MateriaResponse::nombre)
+            assertThat(resultado.content()).hasSize(2);
+            assertThat(resultado.content()).extracting(MateriaResponse::nombre)
                     .containsExactly("Álgebra I", "Cálculo");
-            assertThat(resultado.get(0).maestroNombre()).isEqualTo("Laura Mendoza");
+            assertThat(resultado.content().get(0).maestroNombre()).isEqualTo("Laura Mendoza");
         }
 
         @Test
-        @DisplayName("devuelve una lista vacía cuando no hay materias")
-        void devuelveListaVacia() {
-            when(materiaRepository.findAll()).thenReturn(List.of());
+        @DisplayName("traslada el Pageable recibido al repositorio sin modificarlo")
+        void trasladaElPageableAlRepositorio() {
+            when(materiaRepository.findAll(any(Pageable.class)))
+                    .thenReturn(new PageImpl<>(List.of(materia), primeraPagina, 1));
 
-            assertThat(materiaService.listar()).isEmpty();
+            materiaService.listar(primeraPagina);
+
+            ArgumentCaptor<Pageable> captor = ArgumentCaptor.forClass(Pageable.class);
+            verify(materiaRepository).findAll(captor.capture());
+            assertThat(captor.getValue()).isSameAs(primeraPagina);
+        }
+
+        @Test
+        @DisplayName("expone los metadatos de paginación de la página consultada")
+        void exponeLosMetadatosDePaginacion() {
+            Pageable ultimaPagina = PageRequest.of(2, 2);
+            when(materiaRepository.findAll(ultimaPagina))
+                    .thenReturn(new PageImpl<>(List.of(materia), ultimaPagina, 5));
+
+            PaginaResponse<MateriaResponse> resultado = materiaService.listar(ultimaPagina);
+
+            assertThat(resultado.page()).isEqualTo(2);
+            assertThat(resultado.totalElements()).isEqualTo(5);
+            assertThat(resultado.totalPages()).isEqualTo(3);
+            assertThat(resultado.first()).isFalse();
+            assertThat(resultado.last()).isTrue();
+        }
+
+        @Test
+        @DisplayName("devuelve una página vacía cuando no hay materias")
+        void devuelvePaginaVacia() {
+            when(materiaRepository.findAll(primeraPagina))
+                    .thenReturn(new PageImpl<>(List.of(), primeraPagina, 0));
+
+            assertThat(materiaService.listar(primeraPagina).content()).isEmpty();
         }
     }
 

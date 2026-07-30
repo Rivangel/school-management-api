@@ -2,10 +2,15 @@ package com.escuela.controller;
 
 import com.escuela.model.dto.MaestroRequest;
 import com.escuela.model.dto.MaestroResponse;
+import com.escuela.model.dto.PaginaResponse;
 import com.escuela.service.MaestroService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -16,8 +21,6 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/maestros")
@@ -31,9 +34,15 @@ public class MaestroController {
     }
 
     @GetMapping
-    @Operation(summary = "Listar todos los maestros")
-    public ResponseEntity<List<MaestroResponse>> listar() {
-        return ResponseEntity.ok(maestroService.listar());
+    @Operation(summary = "Listar maestros paginados",
+            description = "Acepta los parámetros estándar `page` (base 0), `size` y `sort` "
+                    + "(por ejemplo `sort=especialidad,desc`). Por defecto devuelve 20 maestros "
+                    + "ordenados por apellido y nombre.")
+    public ResponseEntity<PaginaResponse<MaestroResponse>> listar(
+            @ParameterObject
+            @PageableDefault(size = 20, sort = {"apellido", "nombre"}, direction = Sort.Direction.ASC)
+            Pageable pageable) {
+        return ResponseEntity.ok(maestroService.listar(pageable));
     }
 
     @GetMapping("/{id}")
