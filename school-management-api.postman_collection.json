@@ -113,8 +113,20 @@
       "name": "Alumnos",
       "item": [
         {
-          "name": "Listar alumnos",
-          "request": { "method": "GET", "url": "{{baseUrl}}/api/alumnos" }
+          "name": "Listar alumnos (paginado)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/alumnos?page=0&size=20&sort=apellido,asc",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "alumnos"],
+              "query": [
+                { "key": "page", "value": "0", "description": "Índice de página, empieza en 0" },
+                { "key": "size", "value": "20", "description": "Tamaño de página, se recorta a 100" },
+                { "key": "sort", "value": "apellido,asc", "description": "propiedad,asc|desc — se puede repetir" }
+              ]
+            }
+          }
         },
         {
           "name": "Obtener alumno por id",
@@ -154,8 +166,20 @@
       "name": "Maestros",
       "item": [
         {
-          "name": "Listar maestros",
-          "request": { "method": "GET", "url": "{{baseUrl}}/api/maestros" }
+          "name": "Listar maestros (paginado)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/maestros?page=0&size=20&sort=apellido,asc",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "maestros"],
+              "query": [
+                { "key": "page", "value": "0", "description": "Índice de página, empieza en 0" },
+                { "key": "size", "value": "20", "description": "Tamaño de página, se recorta a 100" },
+                { "key": "sort", "value": "apellido,asc", "description": "propiedad,asc|desc — se puede repetir" }
+              ]
+            }
+          }
         },
         {
           "name": "Obtener maestro por id",
@@ -195,8 +219,20 @@
       "name": "Materias",
       "item": [
         {
-          "name": "Listar materias",
-          "request": { "method": "GET", "url": "{{baseUrl}}/api/materias" }
+          "name": "Listar materias (paginado)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/materias?page=0&size=20&sort=maestro.apellido,asc",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "materias"],
+              "query": [
+                { "key": "page", "value": "0", "description": "Índice de página, empieza en 0" },
+                { "key": "size", "value": "20", "description": "Tamaño de página, se recorta a 100" },
+                { "key": "sort", "value": "maestro.apellido,asc", "description": "Admite propiedades anidadas del maestro" }
+              ]
+            }
+          }
         },
         {
           "name": "Obtener materia por id",

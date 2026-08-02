@@ -123,6 +123,7 @@ Cobertura actual:
 | `CurrentUserServiceTest` | Reglas de propiedad reales: ALUMNO solo ve lo suyo, MAESTRO solo registra en sus materias, ADMIN sin restricción |
 | `AuthControllerIntegrationTest` | Integración de `/api/auth`: login (200 con token, 401 en credenciales malas, 400 de validación), registro (201, contraseña cifrada, email duplicado) y uso del JWT emitido en endpoints protegidos |
 | `AlumnoControllerIntegrationTest` | Integración de `/api/alumnos`: CRUD completo del ADMIN contra la BD y matriz de acceso por rol (con `@WithMockUser` y con tokens JWT reales) |
+| `PaginacionIntegrationTest` | Paginación y ordenamiento de los tres listados: valores por defecto, `page`/`size`, ambas direcciones de `sort`, orden anidado por maestro, página fuera de rango, `size` por encima del tope y `sort` inexistente → 400 |
 
 Matriz de acceso que fijan los tests de `/api/alumnos`:
 
@@ -135,7 +136,7 @@ Matriz de acceso que fijan los tests de `/api/alumnos`:
 mvn test
 ```
 
-Al momento la suite son **126 tests**.
+Al momento la suite son **148 tests**.
 
 Si no tienes Maven o JDK 17 instalados, puedes correrlos en un contenedor:
 
@@ -203,11 +204,41 @@ Colección de Postman incluida: [`school-management-api.postman_collection.json`
 
 El resto de los endpoints requieren el header `Authorization: Bearer <token>`.
 
+### Paginación y ordenamiento
+
+Los listados de **alumnos**, **maestros** y **materias** devuelven páginas, no arreglos. Aceptan tres parámetros opcionales:
+
+| Parámetro | Por defecto | Notas |
+|---|---|---|
+| `page` | `0` | Índice de página, empieza en 0 |
+| `size` | `20` | Se recorta a un máximo de `100` |
+| `sort` | `apellido,nombre` (alumnos y maestros) · `nombre` (materias) | Formato `propiedad,asc\|desc`. Se puede repetir para ordenar por varias propiedades |
+
+`sort` admite propiedades anidadas: `GET /api/materias?sort=maestro.apellido,asc`.
+
+Si `sort` apunta a una propiedad que no existe, la respuesta es **400** con el mensaje `No se puede ordenar por 'X': la propiedad no existe`.
+
+```json
+// GET /api/alumnos?page=0&size=2&sort=matricula,desc
+{
+  "content": [
+    { "id": 3, "nombre": "María", "apellido": "Torres", "matricula": "A2026003", "email": "maria.torres@escuela.com", "grupo": "B" },
+    { "id": 2, "nombre": "Carlos", "apellido": "Ramírez", "matricula": "A2026002", "email": "carlos.ramirez@escuela.com", "grupo": "A" }
+  ],
+  "page": 0,
+  "size": 2,
+  "totalElements": 3,
+  "totalPages": 2,
+  "first": true,
+  "last": false
+}
+```
+
 ### Alumnos
 
 | Método | Ruta | Roles |
 |---|---|---|
-| GET | `/api/alumnos` | ADMIN, MAESTRO |
+| GET | `/api/alumnos` (paginado) | ADMIN, MAESTRO |
 | GET | `/api/alumnos/{id}` | ADMIN, MAESTRO |
 | POST | `/api/alumnos` | ADMIN |
 | PUT | `/api/alumnos/{id}` | ADMIN |
@@ -238,7 +269,7 @@ El resto de los endpoints requieren el header `Authorization: Bearer <token>`.
 
 ### Maestros
 
-CRUD completo en `/api/maestros` (ADMIN; lectura también para MAESTRO).
+CRUD completo en `/api/maestros` (ADMIN; lectura también para MAESTRO). `GET /api/maestros` es paginado.
 
 ```json
 // POST /api/maestros — Request
@@ -252,7 +283,7 @@ CRUD completo en `/api/maestros` (ADMIN; lectura también para MAESTRO).
 
 ### Materias
 
-CRUD completo en `/api/materias` (ADMIN; lectura para todos los roles).
+CRUD completo en `/api/materias` (ADMIN; lectura para todos los roles). `GET /api/materias` es paginado.
 
 ```json
 // POST /api/materias — Request
