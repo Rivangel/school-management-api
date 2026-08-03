@@ -36,6 +36,11 @@ app:
     secret: ${JWT_SECRET:cambia-este-secreto-por-uno-de-al-menos-32-caracteres}
     expiration-ms: ${JWT_EXPIRATION:86400000}
 
+  cors:
+    # Orígenes del frontend, separados por coma. En dev es el `ng serve` de Angular;
+    # en producción se sobreescribe con la variable de entorno.
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:4200}
+
 springdoc:
   swagger-ui:
     path: /swagger-ui.html
