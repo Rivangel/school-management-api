@@ -124,6 +124,8 @@ Cobertura actual:
 | `AuthControllerIntegrationTest` | Integración de `/api/auth`: login (200 con token, 401 en credenciales malas, 400 de validación), registro (201, contraseña cifrada, email duplicado) y uso del JWT emitido en endpoints protegidos |
 | `AlumnoControllerIntegrationTest` | Integración de `/api/alumnos`: CRUD completo del ADMIN contra la BD y matriz de acceso por rol (con `@WithMockUser` y con tokens JWT reales) |
 | `PaginacionIntegrationTest` | Paginación y ordenamiento de los tres listados: valores por defecto, `page`/`size`, ambas direcciones de `sort`, orden anidado por maestro, página fuera de rango, `size` por encima del tope y `sort` inexistente → 400 |
+| `CorsIntegrationTest` | Política CORS: preflight resuelto antes de la autenticación, verbos y cabeceras permitidos, `Content-Disposition` expuesto y rechazo de orígenes ajenos |
+| `ValidacionIntegrationTest` | Validación de entrada: largo y formato del email, duplicado que sólo cambia en mayúsculas → 400, normalización al guardar, formato del periodo, rango 0–10 e ids positivos |
 
 Matriz de acceso que fijan los tests de `/api/alumnos`:
 
@@ -136,7 +138,7 @@ Matriz de acceso que fijan los tests de `/api/alumnos`:
 mvn test
 ```
 
-Al momento la suite son **148 tests**.
+Al momento la suite son **173 tests**.
 
 Si no tienes Maven o JDK 17 instalados, puedes correrlos en un contenedor:
 
@@ -380,7 +382,51 @@ Todas las respuestas de error tienen el mismo formato (manejadas por `GlobalExce
 }
 ```
 
-Los errores de validación (400) incluyen el detalle por campo en `detalles`.
+Los errores de validación (400) incluyen el detalle por campo en `detalles`:
+
+```json
+{
+  "status": 400,
+  "error": "Bad Request",
+  "message": "Error de validación en los datos enviados",
+  "path": "/api/alumnos",
+  "detalles": {
+    "email": "El email debe tener un formato válido",
+    "grupo": "El grupo es obligatorio"
+  }
+}
+```
+
+### Validación de entrada
+
+Reglas que aplican los DTOs, más allá de que los campos sean obligatorios:
+
+| Campo | Regla |
+|---|---|
+| `email` | Formato válido y máximo 120 caracteres (el largo de la columna) |
+| `password` | Entre 6 y 60 caracteres |
+| `calificacion` | Entre 0 y 10 |
+| `creditos` | Entre 1 y 20 |
+| `periodo` | Formato `AAAA-S`, con `S` igual a 1 o 2 (ej. `2026-1`) |
+| `fecha` (asistencia) | No puede ser futura |
+| `alumnoId` · `materiaId` · `maestroId` | Números positivos |
+
+Los campos de texto se **normalizan** antes de validarse: se recortan los espacios de los extremos y el email se pasa a minúsculas. Esto último importa porque las comprobaciones de unicidad comparan exacto: sin normalizar, `Ana@escuela.com` esquivaría el chequeo de un `ana@escuela.com` ya existente y el choque saldría como un 409 de la base en vez de un 400 con el mensaje correcto.
+
+## CORS
+
+La API acepta peticiones del frontend Angular. Los orígenes se configuran con `CORS_ALLOWED_ORIGINS` (separados por coma) y por defecto es `http://localhost:4200`, el `ng serve` de desarrollo.
+
+| Aspecto | Valor |
+|---|---|
+| Orígenes | `app.cors.allowed-origins` — nunca `*` |
+| Métodos | `GET`, `POST`, `PUT`, `DELETE`, `OPTIONS` |
+| Cabeceras aceptadas | `Authorization`, `Content-Type` |
+| Cabeceras expuestas | `Content-Disposition`, `Content-Type` (para descargar la boleta PDF) |
+| Credenciales | Deshabilitadas: la sesión viaja en el JWT, no en cookies |
+| Caché del preflight | 1 hora |
+
+El preflight (`OPTIONS`) se resuelve **antes** de la autenticación, porque el navegador no manda la cabecera `Authorization` en esa petición.
 
 ## Notas de diseño
 
