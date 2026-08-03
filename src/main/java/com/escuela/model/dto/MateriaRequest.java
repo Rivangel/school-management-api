@@ -4,6 +4,7 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 
 public record MateriaRequest(
@@ -18,6 +19,11 @@ public record MateriaRequest(
         Integer creditos,
 
         @NotNull(message = "El id del maestro es obligatorio")
+        @Positive(message = "El id del maestro debe ser un número positivo")
         Long maestroId
 ) {
+
+    public MateriaRequest {
+        nombre = CamposDeTexto.limpiar(nombre);
+    }
 }

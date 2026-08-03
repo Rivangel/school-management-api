@@ -12,4 +12,9 @@ public record LoginRequest(
         @NotBlank(message = "La contraseña es obligatoria")
         String password
 ) {
+
+    public LoginRequest {
+        // Mismo criterio que en el registro, para que el email entre igual en ambos
+        email = CamposDeTexto.normalizarEmail(email);
+    }
 }

@@ -210,7 +210,7 @@ class MaestroServiceTest {
         }
 
         @Test
-        @DisplayName("trata el mismo email con distinta capitalización como propio")
+        @DisplayName("trata el mismo email con distinta capitalización como propio y lo guarda normalizado")
         void ignoraCapitalizacionDelPropioEmail() {
             MaestroRequest cambios = new MaestroRequest(
                     "Laura", "Mendoza", "LAURA.MENDOZA@escuela.com", "Matemáticas");
@@ -219,7 +219,8 @@ class MaestroServiceTest {
 
             MaestroResponse resultado = maestroService.actualizar(1L, cambios);
 
-            assertThat(resultado.email()).isEqualTo("LAURA.MENDOZA@escuela.com");
+            // El DTO ya bajó el email a minúsculas, así que se persiste en su forma canónica
+            assertThat(resultado.email()).isEqualTo("laura.mendoza@escuela.com");
             verify(maestroRepository, never()).existsByEmail(any());
         }
 

@@ -20,10 +20,19 @@ public record AlumnoRequest(
 
         @NotBlank(message = "El email es obligatorio")
         @Email(message = "El email debe tener un formato válido")
+        @Size(max = 120, message = "El email no puede exceder 120 caracteres")
         String email,
 
         @NotBlank(message = "El grupo es obligatorio")
         @Size(max = 10, message = "El grupo no puede exceder 10 caracteres")
         String grupo
 ) {
+
+    public AlumnoRequest {
+        nombre = CamposDeTexto.limpiar(nombre);
+        apellido = CamposDeTexto.limpiar(apellido);
+        matricula = CamposDeTexto.limpiar(matricula);
+        email = CamposDeTexto.normalizarEmail(email);
+        grupo = CamposDeTexto.limpiar(grupo);
+    }
 }

@@ -14,6 +14,7 @@ public record RegisterRequest(
 
         @NotBlank(message = "El email es obligatorio")
         @Email(message = "El email debe tener un formato válido")
+        @Size(max = 120, message = "El email no puede exceder 120 caracteres")
         String email,
 
         @NotBlank(message = "La contraseña es obligatoria")
@@ -23,4 +24,10 @@ public record RegisterRequest(
         @NotNull(message = "El rol es obligatorio (ADMIN, MAESTRO o ALUMNO)")
         Rol rol
 ) {
+
+    public RegisterRequest {
+        nombre = CamposDeTexto.limpiar(nombre);
+        email = CamposDeTexto.normalizarEmail(email);
+        // La contraseña no se toca: los espacios son parte del secreto
+    }
 }
