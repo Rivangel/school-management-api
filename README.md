@@ -1,5 +1,7 @@
 # School Management API
 
+[![CI](https://github.com/Rivangel/school-management-api/actions/workflows/ci.yml/badge.svg)](https://github.com/Rivangel/school-management-api/actions/workflows/ci.yml)
+
 Sistema de gestión escolar construido con **Java 17** y **Spring Boot 3**. Permite administrar alumnos, maestros, materias, calificaciones y asistencia, con autenticación **JWT**, control de acceso por **roles** y generación de **boletas en PDF** con iText.
 
 ## Stack tecnológico
@@ -12,6 +14,7 @@ Sistema de gestión escolar construido con **Java 17** y **Spring Boot 3**. Perm
 - Swagger / OpenAPI (springdoc)
 - Maven
 - Docker + docker-compose
+- GitHub Actions (build + tests en cada push y PR)
 
 ## Arquitectura
 
@@ -148,6 +151,24 @@ docker run --rm -u $(id -u):$(id -g) \
   -v "$HOME/.m2":/var/maven/.m2 -v "$PWD":/app -w /app \
   maven:3.9-eclipse-temurin-17 mvn -B -Duser.home=/var/maven test
 ```
+
+## Integración continua
+
+El workflow [`.github/workflows/ci.yml`](.github/workflows/ci.yml) corre en cada `push` y cada pull request a `main` (y a mano con *Run workflow*). El badge de arriba refleja el estado de `main`.
+
+| Job | Qué hace |
+|---|---|
+| **Build y tests** | `mvn -B -ntp verify` con Temurin 17: compila, corre las 173 pruebas y empaqueta el jar |
+| **Imagen Docker** | `docker build` del `Dockerfile` multi-etapa; no publica en ningún registro |
+
+Detalles que vale la pena saber:
+
+- **No hace falta un servicio de MySQL.** Los tests unitarios usan Mockito y los de integración levantan H2 en memoria con el perfil `test`, así que el job es autocontenido.
+- El caché de `~/.m2/repository` lo maneja `actions/setup-java` con la clave derivada del `pom.xml`.
+- Cada corrida deja un **resumen con la tabla de tests por clase** en la página del run.
+- Si algo falla se suben los XML de `target/surefire-reports/` como artefacto (7 días) para ver el stacktrace exacto; si todo pasa se sube el **jar ejecutable**.
+- Dos push seguidos a la misma rama cancelan la corrida anterior (`concurrency`).
+- [`dependabot.yml`](.github/dependabot.yml) revisa cada semana las dependencias de Maven y las versiones de las actions.
 
 ## Usuarios de prueba
 
