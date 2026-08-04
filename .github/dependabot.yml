@@ -1,0 +1,26 @@
+version: 2
+
+updates:
+  # Dependencias del pom.xml. Spring Boot va aparte porque subir el parent
+  # arrastra decenas de versiones a la vez y conviene revisarlo solo.
+  - package-ecosystem: maven
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: build
+    groups:
+      spring-boot:
+        patterns:
+          - org.springframework.boot:*
+
+  # Versiones de las actions usadas en los workflows.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    commit-message:
+      prefix: ci
