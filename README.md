@@ -141,7 +141,7 @@ Matriz de acceso que fijan los tests de `/api/alumnos`:
 mvn test
 ```
 
-Al momento la suite son **173 tests**.
+Al momento la suite son **182 tests**.
 
 Si no tienes Maven o JDK 17 instalados, puedes correrlos en un contenedor:
 
@@ -158,7 +158,7 @@ El workflow [`.github/workflows/ci.yml`](.github/workflows/ci.yml) corre en cada
 
 | Job | Qué hace |
 |---|---|
-| **Build y tests** | `mvn -B -ntp verify` con Temurin 17: compila, corre las 173 pruebas y empaqueta el jar |
+| **Build y tests** | `mvn -B -ntp verify` con Temurin 17: compila, corre las 182 pruebas y empaqueta el jar |
 | **Imagen Docker** | `docker build` del `Dockerfile` multi-etapa; no publica en ningún registro |
 
 Detalles que vale la pena saber:
@@ -239,7 +239,9 @@ Los listados de **alumnos**, **maestros** y **materias** devuelven páginas, no 
 
 `sort` admite propiedades anidadas: `GET /api/materias?sort=maestro.apellido,asc`.
 
-Si `sort` apunta a una propiedad que no existe, la respuesta es **400** con el mensaje `No se puede ordenar por 'X': la propiedad no existe`.
+Si `sort` apunta a una propiedad que no existe, la respuesta es **400** con el mensaje `No se puede ordenar por 'X': la propiedad no existe`. Un parámetro que no se puede convertir a su tipo (`?maestroId=abc`, `/api/alumnos/abc`) también es **400**, no un 500: la petición vino mal, el servidor no falló.
+
+`GET /api/materias` acepta además `maestroId` para devolver **sólo las materias de ese maestro**. El filtro lo aplica la base de datos, así que los totales de la página cuentan las materias filtradas y no todas — un filtro que se aplicara después de paginar dejaría al cliente calculando páginas que no existen. Un `maestroId` que no corresponde a ningún maestro devuelve una **página vacía** y no un 404: es un filtro, no un recurso.
 
 ```json
 // GET /api/alumnos?page=0&size=2&sort=matricula,desc
@@ -306,7 +308,7 @@ CRUD completo en `/api/maestros` (ADMIN; lectura también para MAESTRO). `GET /a
 
 ### Materias
 
-CRUD completo en `/api/materias` (ADMIN; lectura para todos los roles). `GET /api/materias` es paginado.
+CRUD completo en `/api/materias` (ADMIN; lectura para todos los roles). `GET /api/materias` es paginado y acepta `maestroId` como filtro (`GET /api/materias?maestroId=2`).
 
 ```json
 // POST /api/materias — Request
