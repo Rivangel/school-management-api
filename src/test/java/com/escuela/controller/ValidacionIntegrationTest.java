@@ -22,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -168,6 +169,19 @@ class ValidacionIntegrationTest {
                     .andExpect(jsonPath("$.detalles.alumnoId")
                             .value("El id del alumno debe ser un número positivo"));
         }
+    }
+
+    @Test
+    @DisplayName("un id que no es un número es un 400, no un 500")
+    void idNoNumericoEnLaRuta() throws Exception {
+        // `/api/alumnos/abc` es una dirección que cualquiera puede teclear. Sin un handler
+        // propio la recoge el catch-all y sale como un 500, que además de mentir sugiere
+        // que el fallo está en el servidor.
+        mockMvc.perform(get(ALUMNOS_URL + "/abc"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.message")
+                        .value("El valor 'abc' no es válido para el parámetro 'id'"));
     }
 
     @Test

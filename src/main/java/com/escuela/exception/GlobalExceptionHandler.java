@@ -12,6 +12,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -83,6 +84,23 @@ public class GlobalExceptionHandler {
                                                                         HttpServletRequest request) {
         return buildResponse(HttpStatus.BAD_REQUEST,
                 "No se puede ordenar por '" + ex.getPropertyName() + "': la propiedad no existe",
+                request);
+    }
+
+    /**
+     * Un parámetro que no se puede convertir al tipo que declara el controlador:
+     * {@code /api/alumnos/abc} o {@code ?maestroId=abc}.
+     *
+     * <p>Sin este handler lo recogería el catch-all de abajo y saldría como un 500, que
+     * es mentira: no falló el servidor, la petición venía mal. Y son direcciones que
+     * cualquiera puede teclear en la barra del navegador.
+     */
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ErrorResponse> handleTipoInvalido(MethodArgumentTypeMismatchException ex,
+                                                            HttpServletRequest request) {
+        return buildResponse(HttpStatus.BAD_REQUEST,
+                "El valor '" + ex.getValue() + "' no es válido para el parámetro '"
+                        + ex.getName() + "'",
                 request);
     }
 
