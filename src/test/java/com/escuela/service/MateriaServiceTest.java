@@ -72,7 +72,7 @@ class MateriaServiceTest {
             when(materiaRepository.findAll(primeraPagina))
                     .thenReturn(new PageImpl<>(List.of(materia, otra), primeraPagina, 2));
 
-            PaginaResponse<MateriaResponse> resultado = materiaService.listar(primeraPagina);
+            PaginaResponse<MateriaResponse> resultado = materiaService.listar(null, primeraPagina);
 
             assertThat(resultado.content()).hasSize(2);
             assertThat(resultado.content()).extracting(MateriaResponse::nombre)
@@ -86,7 +86,7 @@ class MateriaServiceTest {
             when(materiaRepository.findAll(any(Pageable.class)))
                     .thenReturn(new PageImpl<>(List.of(materia), primeraPagina, 1));
 
-            materiaService.listar(primeraPagina);
+            materiaService.listar(null, primeraPagina);
 
             ArgumentCaptor<Pageable> captor = ArgumentCaptor.forClass(Pageable.class);
             verify(materiaRepository).findAll(captor.capture());
@@ -100,7 +100,7 @@ class MateriaServiceTest {
             when(materiaRepository.findAll(ultimaPagina))
                     .thenReturn(new PageImpl<>(List.of(materia), ultimaPagina, 5));
 
-            PaginaResponse<MateriaResponse> resultado = materiaService.listar(ultimaPagina);
+            PaginaResponse<MateriaResponse> resultado = materiaService.listar(null, ultimaPagina);
 
             assertThat(resultado.page()).isEqualTo(2);
             assertThat(resultado.totalElements()).isEqualTo(5);
@@ -115,7 +115,31 @@ class MateriaServiceTest {
             when(materiaRepository.findAll(primeraPagina))
                     .thenReturn(new PageImpl<>(List.of(), primeraPagina, 0));
 
-            assertThat(materiaService.listar(primeraPagina).content()).isEmpty();
+            assertThat(materiaService.listar(null, primeraPagina).content()).isEmpty();
+        }
+
+        @Test
+        @DisplayName("con maestroId consulta sólo las materias de ese maestro, ya paginadas")
+        void filtraPorMaestro() {
+            when(materiaRepository.findByMaestroId(1L, primeraPagina))
+                    .thenReturn(new PageImpl<>(List.of(materia), primeraPagina, 1));
+
+            PaginaResponse<MateriaResponse> resultado = materiaService.listar(1L, primeraPagina);
+
+            assertThat(resultado.content()).extracting(MateriaResponse::nombre)
+                    .containsExactly("Álgebra I");
+            verify(materiaRepository, never()).findAll(any(Pageable.class));
+        }
+
+        @Test
+        @DisplayName("un maestro sin materias devuelve una página vacía, no un 404")
+        void maestroSinMateriasDevuelvePaginaVacia() {
+            // El filtro no comprueba que el maestro exista: distinguirlo obligaría a
+            // consultarlo en cada listado para acabar respondiendo lo mismo.
+            when(materiaRepository.findByMaestroId(99L, primeraPagina))
+                    .thenReturn(new PageImpl<>(List.of(), primeraPagina, 0));
+
+            assertThat(materiaService.listar(99L, primeraPagina).content()).isEmpty();
         }
     }
 

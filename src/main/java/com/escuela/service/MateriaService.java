@@ -8,6 +8,7 @@ import com.escuela.model.entity.Maestro;
 import com.escuela.model.entity.Materia;
 import com.escuela.repository.MaestroRepository;
 import com.escuela.repository.MateriaRepository;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,10 +25,20 @@ public class MateriaService {
         this.maestroRepository = maestroRepository;
     }
 
+    /**
+     * Materias paginadas, de un maestro o de todos.
+     *
+     * <p>Un {@code maestroId} que no existe devuelve una página vacía y no un 404: es un
+     * filtro, y un filtro que no encuentra nada no es un error. Distinguirlo obligaría a
+     * consultar al maestro en cada listado para dar la misma respuesta que ya da la lista
+     * vacía.
+     */
     @Transactional(readOnly = true)
-    public PaginaResponse<MateriaResponse> listar(Pageable pageable) {
-        return PaginaResponse.fromPage(
-                materiaRepository.findAll(pageable).map(MateriaResponse::fromEntity));
+    public PaginaResponse<MateriaResponse> listar(Long maestroId, Pageable pageable) {
+        Page<Materia> pagina = maestroId == null
+                ? materiaRepository.findAll(pageable)
+                : materiaRepository.findByMaestroId(maestroId, pageable);
+        return PaginaResponse.fromPage(pagina.map(MateriaResponse::fromEntity));
     }
 
     @Transactional(readOnly = true)

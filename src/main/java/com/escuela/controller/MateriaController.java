@@ -5,6 +5,7 @@ import com.escuela.model.dto.MateriaResponse;
 import com.escuela.model.dto.PaginaResponse;
 import com.escuela.service.MateriaService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springdoc.core.annotations.ParameterObject;
@@ -20,6 +21,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -37,12 +39,16 @@ public class MateriaController {
     @Operation(summary = "Listar materias paginadas",
             description = "Acepta los parámetros estándar `page` (base 0), `size` y `sort`. "
                     + "Admite propiedades anidadas del maestro (`sort=maestro.apellido,asc`). "
-                    + "Por defecto devuelve 20 materias ordenadas por nombre.")
+                    + "Por defecto devuelve 20 materias ordenadas por nombre. Con "
+                    + "`maestroId` devuelve sólo las materias de ese maestro; un id que no "
+                    + "existe devuelve una página vacía, porque es un filtro y no un recurso.")
     public ResponseEntity<PaginaResponse<MateriaResponse>> listar(
+            @Parameter(description = "Devuelve sólo las materias de este maestro")
+            @RequestParam(required = false) Long maestroId,
             @ParameterObject
             @PageableDefault(size = 20, sort = "nombre", direction = Sort.Direction.ASC)
             Pageable pageable) {
-        return ResponseEntity.ok(materiaService.listar(pageable));
+        return ResponseEntity.ok(materiaService.listar(maestroId, pageable));
     }
 
     @GetMapping("/{id}")
