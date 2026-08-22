@@ -45,6 +45,15 @@ public class MaestroController {
         return ResponseEntity.ok(maestroService.listar(pageable));
     }
 
+    @GetMapping("/me")
+    @Operation(summary = "Obtener el maestro del usuario autenticado",
+            description = "El token lleva el email y el rol, no el id del registro. Devuelve "
+                    + "404 si el usuario autenticado no tiene un maestro vinculado (un ADMIN, "
+                    + "por ejemplo). Va antes de `/{id}` porque el router prueba en orden.")
+    public ResponseEntity<MaestroResponse> obtenerActual() {
+        return ResponseEntity.ok(maestroService.obtenerActual());
+    }
+
     @GetMapping("/{id}")
     @Operation(summary = "Obtener un maestro por id")
     public ResponseEntity<MaestroResponse> obtenerPorId(@PathVariable Long id) {

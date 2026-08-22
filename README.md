@@ -76,7 +76,8 @@ src/main/java/com/escuela/
 | Consultar calificaciones/asistencia | ✅ | ✅ | Solo las **propias** |
 | Boleta PDF | ✅ | ✅ | Solo la **propia** |
 
-Los maestros y alumnos se vinculan con su cuenta de usuario por **email**.
+Los maestros y alumnos se vinculan con su cuenta de usuario por **email**; `GET /api/maestros/me`
+es lo que traduce esa identidad a un id cuando el cliente lo necesita.
 
 ## Cómo correr con Docker
 
@@ -295,6 +296,13 @@ Si `sort` apunta a una propiedad que no existe, la respuesta es **400** con el m
 ### Maestros
 
 CRUD completo en `/api/maestros` (ADMIN; lectura también para MAESTRO). `GET /api/maestros` es paginado.
+
+`GET /api/maestros/me` devuelve el maestro **vinculado al usuario autenticado**, resuelto por
+email. Existe porque el token lleva el email y el rol pero **no el id del registro**: sin él, un
+MAESTRO no puede pedir sus propias materias (`GET /api/materias?maestroId=…`) porque no sabe qué
+número es. Va declarado **antes** de `/{id}`, o "me" se interpretaría como un id y saldría un 400.
+Un usuario sin maestro vinculado —cualquier ADMIN— recibe un **404** con esa explicación, que es
+una respuesta correcta y no una avería.
 
 ```json
 // POST /api/maestros — Request

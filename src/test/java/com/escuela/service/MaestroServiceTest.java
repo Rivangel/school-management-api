@@ -7,6 +7,7 @@ import com.escuela.model.dto.MaestroResponse;
 import com.escuela.model.dto.PaginaResponse;
 import com.escuela.model.entity.Maestro;
 import com.escuela.repository.MaestroRepository;
+import com.escuela.security.CurrentUserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -37,6 +38,9 @@ class MaestroServiceTest {
 
     @Mock
     private MaestroRepository maestroRepository;
+
+    @Mock
+    private CurrentUserService currentUserService;
 
     @InjectMocks
     private MaestroService maestroService;
@@ -274,6 +278,38 @@ class MaestroServiceTest {
                     .isInstanceOf(ResourceNotFoundException.class);
 
             verify(maestroRepository, never()).delete(any());
+        }
+    }
+
+    @Nested
+    @DisplayName("obtenerActual")
+    class ObtenerActual {
+
+        @Test
+        @DisplayName("devuelve el maestro vinculado al email del token")
+        void devuelveElDelEmailAutenticado() {
+            // El token lleva email y rol, no el id: es el único enlace entre el usuario
+            // autenticado y su registro de maestro.
+            when(currentUserService.getEmail()).thenReturn("laura.mendoza@escuela.com");
+            when(maestroRepository.findByEmail("laura.mendoza@escuela.com"))
+                    .thenReturn(Optional.of(maestro));
+
+            MaestroResponse respuesta = maestroService.obtenerActual();
+
+            assertThat(respuesta.id()).isEqualTo(1L);
+            assertThat(respuesta.email()).isEqualTo("laura.mendoza@escuela.com");
+        }
+
+        @Test
+        @DisplayName("un usuario sin maestro vinculado no es una avería: es un 404")
+        void sinMaestroVinculadoLanzaNotFound() {
+            // Le pasa a cualquier ADMIN, que no imparte nada.
+            when(currentUserService.getEmail()).thenReturn("admin@escuela.com");
+            when(maestroRepository.findByEmail("admin@escuela.com")).thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> maestroService.obtenerActual())
+                    .isInstanceOf(ResourceNotFoundException.class)
+                    .hasMessageContaining("admin@escuela.com");
         }
     }
 }
