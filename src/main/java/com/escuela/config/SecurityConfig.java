@@ -55,6 +55,11 @@ public class SecurityConfig {
 
                         // Alumnos, maestros y materias: gestión exclusiva del ADMIN,
                         // consulta también para MAESTRO
+                        // Antes de la regla general: `/me` devuelve el registro del propio
+                        // usuario, así que el ALUMNO sí puede pedirlo — es lo que le
+                        // permite consultar sus notas, que se piden por id. Sigue sin poder
+                        // leer a los demás.
+                        .requestMatchers(HttpMethod.GET, "/api/alumnos/me").hasAnyRole(ADMIN, MAESTRO, ALUMNO)
                         .requestMatchers(HttpMethod.GET, "/api/alumnos/**").hasAnyRole(ADMIN, MAESTRO)
                         .requestMatchers("/api/alumnos/**").hasRole(ADMIN)
                         .requestMatchers(HttpMethod.GET, "/api/maestros/**").hasAnyRole(ADMIN, MAESTRO)

@@ -7,6 +7,7 @@ import com.escuela.model.dto.AlumnoResponse;
 import com.escuela.model.dto.PaginaResponse;
 import com.escuela.model.entity.Alumno;
 import com.escuela.repository.AlumnoRepository;
+import com.escuela.security.CurrentUserService;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,9 +16,12 @@ import org.springframework.transaction.annotation.Transactional;
 public class AlumnoService {
 
     private final AlumnoRepository alumnoRepository;
+    private final CurrentUserService currentUserService;
 
-    public AlumnoService(AlumnoRepository alumnoRepository) {
+    public AlumnoService(AlumnoRepository alumnoRepository,
+                         CurrentUserService currentUserService) {
         this.alumnoRepository = alumnoRepository;
+        this.currentUserService = currentUserService;
     }
 
     @Transactional(readOnly = true)
@@ -29,6 +33,28 @@ public class AlumnoService {
     @Transactional(readOnly = true)
     public AlumnoResponse obtenerPorId(Long id) {
         return AlumnoResponse.fromEntity(buscarAlumno(id));
+    }
+
+    /**
+     * El alumno vinculado al usuario autenticado, resuelto por email.
+     *
+     * <p>Es la pieza que le faltaba al ALUMNO para consultar lo suyo:
+     * {@code /api/calificaciones/alumno/{id}} pide un id y el token no lo lleva, y el
+     * listado de alumnos —donde podría buscarse— está cerrado para él precisamente
+     * porque no debe ver a los demás. Sin esto, el único rol que sólo puede consultar sus
+     * propios datos es el que no puede nombrarlos.
+     *
+     * <p>No abre ninguna puerta nueva: devuelve **su** registro, el mismo que
+     * {@code validarAccesoAlumno} ya le permitiría leer. Un ADMIN o un MAESTRO no tienen
+     * alumno vinculado y reciben un 404 con esa explicación.
+     */
+    @Transactional(readOnly = true)
+    public AlumnoResponse obtenerActual() {
+        String email = currentUserService.getEmail();
+        return alumnoRepository.findByEmail(email)
+                .map(AlumnoResponse::fromEntity)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "No hay ningún alumno vinculado a " + email));
     }
 
     @Transactional

@@ -45,6 +45,16 @@ public class AlumnoController {
         return ResponseEntity.ok(alumnoService.listar(pageable));
     }
 
+    @GetMapping("/me")
+    @Operation(summary = "Obtener el alumno del usuario autenticado",
+            description = "El token lleva el email y el rol, no el id del registro. Es lo que "
+                    + "permite a un ALUMNO consultar sus propias calificaciones y asistencia, "
+                    + "que se piden por id. Devuelve 404 si el usuario autenticado no tiene un "
+                    + "alumno vinculado. Va antes de `/{id}` porque el router prueba en orden.")
+    public ResponseEntity<AlumnoResponse> obtenerActual() {
+        return ResponseEntity.ok(alumnoService.obtenerActual());
+    }
+
     @GetMapping("/{id}")
     @Operation(summary = "Obtener un alumno por id")
     public ResponseEntity<AlumnoResponse> obtenerPorId(@PathVariable Long id) {

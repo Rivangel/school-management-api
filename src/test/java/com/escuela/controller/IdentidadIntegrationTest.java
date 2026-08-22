@@ -30,6 +30,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class IdentidadIntegrationTest {
 
     private static final String ME_URL = "/api/maestros/me";
+    private static final String ALUMNO_ME_URL = "/api/alumnos/me";
 
     @Autowired
     private MockMvc mockMvc;
@@ -72,5 +73,35 @@ class IdentidadIntegrationTest {
         // este endpoint no abre una puerta nueva.
         mockMvc.perform(get(ME_URL))
                 .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(username = "ana.lopez@escuela.com", roles = "ALUMNO")
+    @DisplayName("el ALUMNO sí puede pedir su propio registro")
+    void alumnoObtieneElSuyo() throws Exception {
+        // Es lo que le permite consultar sus notas, que se piden por id.
+        mockMvc.perform(get(ALUMNO_ME_URL))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(1))
+                .andExpect(jsonPath("$.matricula").value("A2026001"));
+    }
+
+    @Test
+    @WithMockUser(username = "ana.lopez@escuela.com", roles = "ALUMNO")
+    @DisplayName("pero sigue sin poder leer a los demás alumnos")
+    void alumnoNoPuedeLeerAOtros() throws Exception {
+        // `/me` no abre una puerta nueva: devuelve su propio registro y nada más.
+        mockMvc.perform(get("/api/alumnos/2"))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(get("/api/alumnos"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(username = "admin@escuela.com", roles = "ADMIN")
+    @DisplayName("un ADMIN no tiene alumno vinculado: 404")
+    void adminSinAlumnoVinculado() throws Exception {
+        mockMvc.perform(get(ALUMNO_ME_URL))
+                .andExpect(status().isNotFound());
     }
 }

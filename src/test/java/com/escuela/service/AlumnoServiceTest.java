@@ -7,6 +7,7 @@ import com.escuela.model.dto.AlumnoResponse;
 import com.escuela.model.dto.PaginaResponse;
 import com.escuela.model.entity.Alumno;
 import com.escuela.repository.AlumnoRepository;
+import com.escuela.security.CurrentUserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -37,6 +38,9 @@ class AlumnoServiceTest {
 
     @Mock
     private AlumnoRepository alumnoRepository;
+
+    @Mock
+    private CurrentUserService currentUserService;
 
     @InjectMocks
     private AlumnoService alumnoService;
@@ -296,6 +300,35 @@ class AlumnoServiceTest {
                     .isInstanceOf(ResourceNotFoundException.class);
 
             verify(alumnoRepository, never()).delete(any());
+        }
+    }
+
+    @Nested
+    @DisplayName("obtenerActual")
+    class ObtenerActual {
+
+        @Test
+        @DisplayName("devuelve el alumno vinculado al email del token")
+        void devuelveElDelEmailAutenticado() {
+            // Es la única forma que tiene un ALUMNO de saber su propio id: el token no lo
+            // lleva y el listado de alumnos está cerrado para él.
+            when(currentUserService.getEmail()).thenReturn(alumno.getEmail());
+            when(alumnoRepository.findByEmail(alumno.getEmail())).thenReturn(Optional.of(alumno));
+
+            AlumnoResponse respuesta = alumnoService.obtenerActual();
+
+            assertThat(respuesta.email()).isEqualTo(alumno.getEmail());
+        }
+
+        @Test
+        @DisplayName("un usuario sin alumno vinculado recibe un 404")
+        void sinAlumnoVinculadoLanzaNotFound() {
+            when(currentUserService.getEmail()).thenReturn("admin@escuela.com");
+            when(alumnoRepository.findByEmail("admin@escuela.com")).thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> alumnoService.obtenerActual())
+                    .isInstanceOf(ResourceNotFoundException.class)
+                    .hasMessageContaining("admin@escuela.com");
         }
     }
 }

@@ -69,7 +69,7 @@ src/main/java/com/escuela/
 
 | Recurso | ADMIN | MAESTRO | ALUMNO |
 |---|---|---|---|
-| Alumnos (CRUD) | ✅ | Solo lectura | ❌ |
+| Alumnos (CRUD) | ✅ | Solo lectura | Solo `/me` |
 | Maestros (CRUD) | ✅ | Solo lectura | ❌ |
 | Materias (CRUD) | ✅ | Solo lectura | Solo lectura |
 | Registrar calificaciones/asistencia | ✅ | Solo de **sus** materias | ❌ |
@@ -292,6 +292,15 @@ Si `sort` apunta a una propiedad que no existe, la respuesta es **400** con el m
   "grupo": "B"
 }
 ```
+
+`GET /api/alumnos/me` devuelve el alumno **vinculado al usuario autenticado**, resuelto por
+email, y es el único endpoint de esta sección abierto al ALUMNO. Sin él, el único rol que
+sólo puede consultar sus propios datos era justamente el que no podía nombrarlos: las notas
+y la asistencia se piden por id (`/api/calificaciones/alumno/{id}`), el token no lo lleva y
+el listado de alumnos está cerrado para él precisamente porque no debe ver a los demás. No
+abre ninguna puerta nueva —devuelve su propio registro, el mismo que `validarAccesoAlumno`
+ya le deja leer— y va declarado **antes** de `/{id}`. Un ADMIN o un MAESTRO no tienen alumno
+vinculado y reciben un 404.
 
 ### Maestros
 
