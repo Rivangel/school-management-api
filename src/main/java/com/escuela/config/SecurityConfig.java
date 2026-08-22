@@ -74,6 +74,11 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/calificaciones/materia/**").hasAnyRole(ADMIN, MAESTRO)
                         .requestMatchers(HttpMethod.POST, "/api/asistencia").hasAnyRole(ADMIN, MAESTRO)
                         .requestMatchers(HttpMethod.GET, "/api/asistencia/alumno/**").hasAnyRole(ADMIN, MAESTRO, ALUMNO)
+                        // La lista de un grupo entero no es del ALUMNO, como las notas por
+                        // materia. Va explícita porque si no cae en el `anyRequest()` de
+                        // abajo, que sólo pide estar autenticado: un endpoint nuevo bajo un
+                        // prefijo ya usado no hereda las reglas de sus vecinos.
+                        .requestMatchers(HttpMethod.GET, "/api/asistencia/materia/**").hasAnyRole(ADMIN, MAESTRO)
 
                         // Reportes
                         .requestMatchers("/api/reportes/**").hasAnyRole(ADMIN, MAESTRO, ALUMNO)

@@ -272,4 +272,61 @@ class AsistenciaServiceTest {
             verify(asistenciaRepository, never()).findByAlumnoId(anyLong());
         }
     }
+
+    @Nested
+    @DisplayName("listarPorMateriaYFecha")
+    class ListarPorMateriaYFecha {
+
+        @Test
+        @DisplayName("devuelve lo ya registrado de esa materia ese día")
+        void devuelveLoRegistradoDelDia() {
+            // Es lo que necesita saber quien va a pasar lista: sin esto, la única forma
+            // de averiguarlo era preguntar alumno por alumno.
+            when(materiaRepository.existsById(10L)).thenReturn(true);
+            when(asistenciaRepository.findByMateriaIdAndFecha(10L, FECHA))
+                    .thenReturn(List.of(asistenciaExistente(true)));
+
+            List<AsistenciaResponse> respuesta =
+                    asistenciaService.listarPorMateriaYFecha(10L, FECHA);
+
+            assertThat(respuesta).hasSize(1);
+            assertThat(respuesta.get(0).alumnoId()).isEqualTo(1L);
+            assertThat(respuesta.get(0).presente()).isTrue();
+        }
+
+        @Test
+        @DisplayName("un día sin lista pasada devuelve vacío, no un 404")
+        void diaSinRegistrosDevuelveVacio() {
+            // No encontrar nada es la respuesta normal: casi siempre se pasa lista de un
+            // día que todavía no la tiene.
+            when(materiaRepository.existsById(10L)).thenReturn(true);
+            when(asistenciaRepository.findByMateriaIdAndFecha(10L, FECHA)).thenReturn(List.of());
+
+            assertThat(asistenciaService.listarPorMateriaYFecha(10L, FECHA)).isEmpty();
+        }
+
+        @Test
+        @DisplayName("una materia que no existe sí es un 404")
+        void materiaInexistenteLanzaNotFound() {
+            // Aquí la materia es el recurso, no un filtro: distinguirlo importa.
+            when(materiaRepository.existsById(99L)).thenReturn(false);
+
+            assertThatThrownBy(() -> asistenciaService.listarPorMateriaYFecha(99L, FECHA))
+                    .isInstanceOf(ResourceNotFoundException.class);
+
+            verify(asistenciaRepository, never()).findByMateriaIdAndFecha(anyLong(), any());
+        }
+
+        @Test
+        @DisplayName("leerla no exige ser el maestro de la materia")
+        void leerNoExigeSerElMaestro() {
+            // Igual que en calificaciones: registrar sí lo exige, consultar no.
+            when(materiaRepository.existsById(10L)).thenReturn(true);
+            when(asistenciaRepository.findByMateriaIdAndFecha(10L, FECHA)).thenReturn(List.of());
+
+            asistenciaService.listarPorMateriaYFecha(10L, FECHA);
+
+            verifyNoInteractions(currentUserService);
+        }
+    }
 }

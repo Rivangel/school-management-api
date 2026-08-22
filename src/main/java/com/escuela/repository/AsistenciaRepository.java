@@ -11,5 +11,7 @@ public interface AsistenciaRepository extends JpaRepository<Asistencia, Long> {
 
     List<Asistencia> findByAlumnoId(Long alumnoId);
 
+    List<Asistencia> findByMateriaIdAndFecha(Long materiaId, LocalDate fecha);
+
     Optional<Asistencia> findByAlumnoIdAndMateriaIdAndFecha(Long alumnoId, Long materiaId, LocalDate fecha);
 }

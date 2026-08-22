@@ -10,6 +10,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
@@ -102,6 +103,21 @@ public class GlobalExceptionHandler {
                 "El valor '" + ex.getValue() + "' no es válido para el parámetro '"
                         + ex.getName() + "'",
                 request);
+    }
+
+    /**
+     * Falta un parámetro obligatorio: {@code /api/asistencia/materia/3} sin {@code fecha}.
+     *
+     * <p>Sin este handler lo recoge el catch-all y sale un 500, que es la misma mentira
+     * que contaba el tipo inválido antes del Día 18: no falló el servidor, la petición
+     * venía incompleta. Y el mensaje dice **qué** parámetro falta, que es lo único que
+     * el cliente necesita para arreglarlo.
+     */
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ResponseEntity<ErrorResponse> handleParametroFaltante(
+            MissingServletRequestParameterException ex, HttpServletRequest request) {
+        return buildResponse(HttpStatus.BAD_REQUEST,
+                "Falta el parámetro obligatorio '" + ex.getParameterName() + "'", request);
     }
 
     @ExceptionHandler(DataIntegrityViolationException.class)

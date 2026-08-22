@@ -382,6 +382,20 @@ Si ya existe una calificación para el mismo alumno, materia y periodo, se actua
 |---|---|---|
 | POST | `/api/asistencia` | ADMIN, MAESTRO (solo sus materias) |
 | GET | `/api/asistencia/alumno/{id}` | ADMIN, MAESTRO, ALUMNO (solo propia) |
+| GET | `/api/asistencia/materia/{id}?fecha=AAAA-MM-DD` | ADMIN, MAESTRO |
+
+`GET /api/asistencia/materia/{id}` devuelve lo ya registrado de esa materia **ese día**, que
+es lo que necesita saber quien va a pasar lista: sin él, la única forma de averiguarlo era
+preguntar alumno por alumno, y una pantalla que no lo sabe sólo puede volver a mandarlo todo
+cada vez. La `fecha` es obligatoria —sin ella la respuesta sería el historial entero de la
+materia, que no lo pide nadie— y **falta responde 400**, no 500: el parámetro que falta lo
+recogía el catch-all del `GlobalExceptionHandler`, la misma mentira que contaba el tipo
+inválido antes del Día 18.
+
+Leer la lista de una materia **no exige ser su maestro** (registrarla sí); lo que no puede
+es leerla un ALUMNO, que vería a todo su grupo. Esa regla va **explícita** en
+`SecurityConfig`: un endpoint nuevo bajo un prefijo ya usado no hereda las de sus vecinos, y
+sin ella habría caído en el `anyRequest().authenticated()` del final.
 
 ```json
 // POST /api/asistencia — Request

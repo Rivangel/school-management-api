@@ -13,6 +13,7 @@ import com.escuela.security.CurrentUserService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Service
@@ -57,6 +58,27 @@ public class AsistenciaService {
                         alumno, materia, request.fecha(), request.presente()));
 
         return AsistenciaResponse.fromEntity(asistenciaRepository.save(asistencia));
+    }
+
+    /**
+     * La asistencia ya registrada de una materia en un día concreto.
+     *
+     * <p>Es lo que le faltaba a quien pasa lista: sin esto, la única forma de saber si
+     * un grupo ya tenía asistencia ese día era preguntar alumno por alumno, y una
+     * pantalla que no lo sabe sólo puede volver a mandarlo todo cada vez.
+     *
+     * <p>Leerla no exige ser el maestro de la materia, igual que en calificaciones;
+     * registrarla sí, y eso lo sigue comprobando {@link #registrar}.
+     */
+    @Transactional(readOnly = true)
+    public List<AsistenciaResponse> listarPorMateriaYFecha(Long materiaId, LocalDate fecha) {
+        if (!materiaRepository.existsById(materiaId)) {
+            throw new ResourceNotFoundException("Materia", materiaId);
+        }
+
+        return asistenciaRepository.findByMateriaIdAndFecha(materiaId, fecha).stream()
+                .map(AsistenciaResponse::fromEntity)
+                .toList();
     }
 
     @Transactional(readOnly = true)
