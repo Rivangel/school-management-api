@@ -74,14 +74,14 @@ jobs:
       # el stacktrace exacto de cada test que reventó.
       - name: Publicar reportes de surefire (sólo si algo falla)
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: surefire-reports
           path: target/surefire-reports/
           retention-days: 7
 
       - name: Publicar el jar ejecutable
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: school-management-api-jar
           path: target/*.jar
