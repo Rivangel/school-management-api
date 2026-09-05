@@ -130,6 +130,7 @@ Cobertura actual:
 | `PaginacionIntegrationTest` | Paginación y ordenamiento de los tres listados: valores por defecto, `page`/`size`, ambas direcciones de `sort`, orden anidado por maestro, página fuera de rango, `size` por encima del tope y `sort` inexistente → 400 |
 | `CorsIntegrationTest` | Política CORS: preflight resuelto antes de la autenticación, verbos y cabeceras permitidos, `Content-Disposition` expuesto y rechazo de orígenes ajenos |
 | `ValidacionIntegrationTest` | Validación de entrada: largo y formato del email, duplicado que sólo cambia en mayúsculas → 400, normalización al guardar, formato del periodo, rango 0–10 e ids positivos |
+| `AccesoDenegadoIntegrationTest` | Códigos de las denegaciones de la cadena de seguridad, con un **servidor real** (`RANDOM_PORT`): sin rol → 403, sin token → 401. Levanta el puerto a propósito, porque el reenvío a `/error` que cambiaba el código lo hace el contenedor de servlets y MockMvc no lo ejecuta |
 
 Matriz de acceso que fijan los tests de `/api/alumnos`:
 
@@ -138,11 +139,18 @@ Matriz de acceso que fijan los tests de `/api/alumnos`:
 | `GET` (listar / ficha) | 401 | 403 | ✅ | ✅ |
 | `POST` · `PUT` · `DELETE` | 401 | 403 | 403 | ✅ |
 
+La diferencia entre **401 y 403 es contractual**, no cosmética: 401 significa
+«identifícate» y 403 «ya sé quién eres, pero esto no te toca». El frontend actúa
+distinto en cada caso — un 401 lo lee como sesión caducada, cierra la sesión y
+manda al login—, así que devolver 401 por falta de permisos echa de la aplicación
+a un usuario cuya sesión sigue viva. `AccesoDenegadoIntegrationTest` lo fija
+contra un servidor real.
+
 ```bash
 mvn test
 ```
 
-Al momento la suite son **182 tests**.
+Al momento la suite son **210 tests**.
 
 Si no tienes Maven o JDK 17 instalados, puedes correrlos en un contenedor:
 

@@ -20,6 +20,7 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import java.io.IOException;
 import java.util.List;
 
 @Configuration
@@ -86,17 +87,51 @@ public class SecurityConfig {
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(handling -> handling
-                        .authenticationEntryPoint((request, response, ex) -> {
-                            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                            response.setContentType("application/json;charset=UTF-8");
-                            response.getWriter().write("""
-                                    {"status":401,"error":"Unauthorized",\
-                                    "message":"Se requiere un token JWT válido","path":"%s"}"""
-                                    .formatted(request.getRequestURI()));
-                        }))
+                        // Quien no se ha identificado: 401. El cuerpo se escribe aquí mismo
+                        // en vez de con `sendError`, para no reenviar la petición a `/error`.
+                        .authenticationEntryPoint((request, response, ex) ->
+                                escribirError(response, HttpServletResponse.SC_UNAUTHORIZED,
+                                        "Unauthorized", "Se requiere un token JWT válido",
+                                        request.getRequestURI()))
+                        // Quien sí se identificó pero no tiene el rol: **403, no 401**, y la
+                        // diferencia no es cosmética. El frontend lee un 401 como "la sesión
+                        // caducó", cierra la sesión y manda al login (`error-interceptor.ts`),
+                        // así que responder 401 aquí echa de la aplicación a un usuario cuya
+                        // sesión está perfectamente viva por pedir algo que no le tocaba.
+                        //
+                        // Sin este handler actúa el de por defecto, que llama a `sendError`:
+                        // el contenedor reenvía a `/error` —que no es público— y esa segunda
+                        // vuelta por la cadena acaba en el `authenticationEntryPoint` de
+                        // arriba, de modo que el 403 sale convertido en 401. **MockMvc no
+                        // ejecuta ese reenvío**, así que los tests de rol veían el 403 correcto
+                        // mientras el servidor real respondía 401; por eso el test que fija
+                        // esto (`AccesoDenegadoIntegrationTest`) levanta un servidor de verdad.
+                        .accessDeniedHandler((request, response, ex) ->
+                                escribirError(response, HttpServletResponse.SC_FORBIDDEN,
+                                        "Forbidden",
+                                        "No tienes permisos para acceder a este recurso",
+                                        request.getRequestURI())))
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
+    }
+
+    /**
+     * Escribe un error de seguridad como JSON, con la misma forma que los del
+     * {@code GlobalExceptionHandler} para que el cliente no tenga que distinguir
+     * de dónde salió el fallo.
+     *
+     * <p>Escribe directamente en la respuesta en lugar de usar {@code sendError}
+     * a propósito: {@code sendError} desencadena el reenvío a {@code /error}, que
+     * vuelve a pasar por la cadena de seguridad y cambia el código de estado.
+     */
+    private static void escribirError(HttpServletResponse response, int estado, String error,
+                                      String mensaje, String ruta) throws IOException {
+        response.setStatus(estado);
+        response.setContentType("application/json;charset=UTF-8");
+        response.getWriter().write(
+                "{\"status\":%d,\"error\":\"%s\",\"message\":\"%s\",\"path\":\"%s\"}"
+                        .formatted(estado, error, mensaje, ruta));
     }
 
     /**
