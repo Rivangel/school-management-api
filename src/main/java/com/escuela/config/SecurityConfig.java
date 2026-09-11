@@ -84,6 +84,11 @@ public class SecurityConfig {
                         // Reportes
                         .requestMatchers("/api/reportes/**").hasAnyRole(ADMIN, MAESTRO, ALUMNO)
 
+                        // Estadísticas del dashboard: agregan todo el centro, así que es la
+                        // misma frontera que las notas o la asistencia por materia — el ALUMNO
+                        // no tiene un endpoint que le resuma el grupo, solo lo suyo.
+                        .requestMatchers("/api/estadisticas/**").hasAnyRole(ADMIN, MAESTRO)
+
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(handling -> handling
