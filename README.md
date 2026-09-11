@@ -429,6 +429,38 @@ curl -H "Authorization: Bearer $TOKEN" \
      http://localhost:8080/api/reportes/boleta/1
 ```
 
+### Estadísticas
+
+| Método | Ruta | Roles |
+|---|---|---|
+| GET | `/api/estadisticas` | ADMIN, MAESTRO |
+
+Indicadores agregados para el dashboard: conteos de alumnos/maestros/materias, promedio de
+calificaciones y porcentaje de asistencia, generales y por materia. Es la misma frontera que
+`/api/asistencia/materia/**` y `/api/calificaciones/materia/**`: agrega todo el centro, así
+que el ALUMNO no tiene acceso — solo lo suyo, por las rutas que ya tiene.
+
+Las materias sin ninguna calificación o asistencia registrada **no aparecen** en las listas
+por materia, y los promedios/porcentajes generales son `null` cuando no hay ningún registro
+todavía, en vez de un engañoso `0`.
+
+```json
+// GET /api/estadisticas — Response
+{
+  "totalAlumnos": 3,
+  "totalMaestros": 2,
+  "totalMaterias": 3,
+  "promedioGeneral": 8.33,
+  "promedioPorMateria": [
+    { "materiaId": 3, "materiaNombre": "Bases de Datos", "promedio": 9.55, "cantidadCalificaciones": 2 }
+  ],
+  "asistenciaGeneral": { "presentes": 5, "ausentes": 2, "total": 7, "porcentaje": 71.43 },
+  "asistenciaPorMateria": [
+    { "materiaId": 3, "materiaNombre": "Bases de Datos", "presentes": 0, "total": 1, "porcentaje": 0.0 }
+  ]
+}
+```
+
 ### Errores
 
 Todas las respuestas de error tienen el mismo formato (manejadas por `GlobalExceptionHandler`):

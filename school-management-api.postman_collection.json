@@ -322,6 +322,15 @@
           "request": { "method": "GET", "url": "{{baseUrl}}/api/reportes/boleta/1" }
         }
       ]
+    },
+    {
+      "name": "Estadísticas",
+      "item": [
+        {
+          "name": "Estadísticas del dashboard",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/estadisticas" }
+        }
+      ]
     }
   ]
 }
