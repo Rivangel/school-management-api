@@ -22,7 +22,7 @@ jobs:
 
     steps:
       - name: Clonar el repositorio
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Preparar JDK 17
         uses: actions/setup-java@v4
@@ -94,7 +94,7 @@ jobs:
 
     steps:
       - name: Clonar el repositorio
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       # No se publica en ningún registro: sólo confirma que el Dockerfile
       # multi-etapa sigue compilando antes de llegar a un deploy.
